@@ -29,6 +29,21 @@ def remainder(left, right):
 def gain(total, left, right):
     return entropy(total) - remainder(left, right)
 
+
+def train_test_k_fold(n_folds, n_instances, random_generator=default_rng()):
+    # split the dataset into k splits
+    split_indices = k_fold_split(n_folds, n_instances, random_generator)
+
+    folds = []
+    for k in range(n_folds):
+        test_indices = split_indices[k]
+        train_indices = np.concatenate([split_indices[i] for i in range(
+            n_folds) if i != k]).astype(int)
+
+        folds.append([train_indices, test_indices])
+
+    return folds
+
 # Split the dataset into train, validation and test set in k ways using k folds
 # Returns indices of the entries in the initial dataset
 

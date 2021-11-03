@@ -8,12 +8,12 @@ class DecisionTree:
         self.root = None
 
     def fit(self, x_train=None, y_train=None, training_set=None):
-        if(not x_train and not y_train and not training_set):
+        if(x_train is None and y_train is None and training_set is None):
             raise Exception("No data passed to train the model")
-        if(training_set):
-            self.root, self.depth = __decision_tree_learning(training_set)
+        if(training_set is not None):
+            self.root, self.depth = self.__decision_tree_learning(training_set)
         else:
-            self.root, self.depth = __decision_tree_learning(
+            self.root, self.depth = self.__decision_tree_learning(
                 np.hstack(x_train, y_train))
 
     def predict(self, x_test):
@@ -26,6 +26,22 @@ class DecisionTree:
 
         return np.array(predicted)
 
+    def __decision_tree_learning(self, training_set, depth=0):
+        labels = np.unique(training_set[:, -1])
+
+        # There is only one unique label
+        if(labels.shape[0] == 1):
+            return Node(0, 0, None, None, labels[0]), depth
+
+        attr_max, val_max, left, right = find_split(training_set)
+
+        l_branch, l_depth = self.__decision_tree_learning(left, depth + 1)
+        r_branch, r_depth = self.__decision_tree_learning(right, depth + 1)
+
+        node = Node(attr_max, val_max, l_branch, r_branch)
+
+        return node, max(l_depth, r_depth)
+
 # Predict the label using the given tree and data entry in a recursive manner
 
 
@@ -37,23 +53,6 @@ def predict_entry(root, data):
         return predict_entry(root.left, data)
     else:
         return predict_entry(root.right, data)
-
-
-def __decision_tree_learning(training_set, depth=0):
-    labels = np.unique(training_set[:, -1])
-
-    # There is only one unique label
-    if(labels.shape[0] == 1):
-        return Node(0, 0, None, None, labels[0]), depth
-
-    attr_max, val_max, left, right = find_split(training_set)
-
-    l_branch, l_depth = __decision_tree_learning(left, depth + 1)
-    r_branch, r_depth = __decision_tree_learning(right, depth + 1)
-
-    node = Node(attr_max, val_max, l_branch, r_branch)
-
-    return node, max(l_depth, r_depth)
 
 # Finds and returns the split with the highest information gain
 
@@ -72,7 +71,7 @@ def find_split(dataset):
             left_labels = left[:, -1]
             right_labels = right[:, -1]
 
-            h = gain(dataset[:, -1], left_labels, right_labels)
+            h = utils.gain(dataset[:, -1], left_labels, right_labels)
 
             if(h > h_max):
                 h_max, attr_max, val_max = h, i, val
