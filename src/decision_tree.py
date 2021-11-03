@@ -1,5 +1,6 @@
 import utils
 import numpy as np
+import model_eval
 
 
 class DecisionTree:
@@ -26,6 +27,46 @@ class DecisionTree:
 
         return np.array(predicted)
 
+    def prune(self, training_set, validation_set):
+        self.depth = self.__prune(self.root, training_set, validation_set)
+
+    def __prune(self, root, training_set, validation_set):
+        if(root is None):
+            return 0
+
+        left_set = training_set[training_set[:, root.attribute] <= root.value]
+        right_set = training_set[training_set[:, root.attribute] > root.value]
+
+        l_depth = self.__prune(root.left, left_set, validation_set)
+        r_depth = self.__prune(root.right, right_set, validation_set)
+
+        left = root.left
+        right = root.right
+
+        if(left is not None and right is not None and left.label is not None and right.label is not None):
+            acc0 = model_eval.evaluate(validation_set, self)
+
+            if(left_set.shape[0] > right_set.shape[0]):
+                root.label = left.label
+            else:
+                root.label = right.label
+            root.left = None
+            root.right = None
+
+            acc1 = model_eval.evaluate(validation_set, self)
+
+            #print(root.attribute, root.value, acc0, acc1)
+
+            if(acc1 <= acc0):
+                root.left = left
+                root.right = right
+                root.label = None
+                return 1
+
+            return 0
+
+        return max(l_depth, r_depth) + 1
+
     def __decision_tree_learning(self, training_set, depth=0):
         labels = np.unique(training_set[:, -1])
 
@@ -41,6 +82,19 @@ class DecisionTree:
         node = Node(attr_max, val_max, l_branch, r_branch)
 
         return node, max(l_depth, r_depth)
+
+    # Recursive helper to draw the tree
+
+    def __draw_tree(self, root, depth=1):
+        if(root.left == None and root.right == None):
+            return "|  " * (depth - 1) + ">> " + "class " + str(root.label)
+
+        return ("|  ") * (depth - 1) + ("*  ") + "feature " + str(root.attribute) + " <= " + str(root.value) + '\n' + self.__draw_tree(root.left, depth + 1) + '\n' + ("|  ") * (depth - 1) + ("*  ") + "feature " + str(root.attribute) + " > " + str(root.value) + '\n' + self.__draw_tree(root.right, depth + 1)
+
+    # The text representation of the decision tree
+
+    def __str__(self):
+        return self.__draw_tree(self.root)
 
 # Predict the label using the given tree and data entry in a recursive manner
 
@@ -80,21 +134,6 @@ def find_split(dataset):
     right = dataset[dataset[:, attr_max] > val_max]
     return (attr_max, val_max, left, right)
 
-# Recursive helper to draw the tree
-
-
-def __draw_tree(root, depth=1):
-    if(root.left == None and root.right == None):
-        return "|  " * (depth - 1) + ">> " + "class " + str(root.label)
-
-    return ("|  ") * (depth - 1) + ("*  ") + "feature " + str(root.attribute) + " <= " + str(root.value) + '\n' + _draw_tree(root.left, depth + 1) + '\n' + ("|  ") * (depth - 1) + ("*  ") + "feature " + str(root.attribute) + " > " + str(root.value) + '\n' + _draw_tree(root.right, depth + 1)
-
-# The text representation of the decision tree
-
-
-def __str__(tree):
-    return __draw_tree(tree)
-
 
 # Node class used to build the decision tree
 # Leaves have the left and right attributes None and have a label set
@@ -108,4 +147,4 @@ class Node:
         self.label = label
 
     def is_leaf(self):
-        return self.left == None and self.right == None
+        return self.left is None and self.right is None
