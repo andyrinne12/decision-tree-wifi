@@ -55,13 +55,16 @@ def train_val_test_k_fold(n_folds, n_instances, random_generator=default_rng()):
 
     folds = []
     for k in range(n_folds):
-        val_k = (k + 1) % n_folds
-        test_indices = split_indices[k].astype(int)
-        val_indices = split_indices[val_k].astype(int)
-        train_indices = np.concatenate([split_indices[i] if i != val_k and i != k else np.array(
-            []) for i in range(n_folds)]).astype(int)
+        for h in range(n_folds):
+            if(k == h):
+                continue
 
-        folds.append([train_indices, val_indices, test_indices])
+            test_indices = split_indices[k].astype(int)
+            val_indices = split_indices[h].astype(int)
+            train_indices = np.concatenate([split_indices[i] for i in range(
+                n_folds) if i != h and i != k]).astype(int)
+
+            folds.append([train_indices, val_indices, test_indices])
 
     return folds
 

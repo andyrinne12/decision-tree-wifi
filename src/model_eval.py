@@ -3,12 +3,11 @@ import utils
 import extra
 
 
-def get_metrics_cross_validation(dataset, model, n_folds=10):
+def eval_cross_validation(dataset, model, n_folds=10):
     folds = utils.train_test_k_fold(n_folds, dataset.shape[0])
 
     x = dataset[:, :-1]
     y = dataset[:, -1]
-
     metrics_list = []
 
     for train_indices, test_indices in folds:
@@ -18,13 +17,33 @@ def get_metrics_cross_validation(dataset, model, n_folds=10):
 
         model.fit(training_set=train)
         metrics = evaluate_metrics(x_test, y_test, model)
-
         metrics_list.append(metrics)
 
-        # print(extra.print_metrics(metrics))
+    metrics_list = np.array(metrics_list)
+    metrics_mean = get_metrics_mean(metrics_list)
+
+    return metrics_mean
+
+
+def eval_prune_nested_cross_validation(dataset, model, n_folds=10):
+    folds = utils.train_val_test_k_fold(n_folds, dataset.shape[0])
+
+    x = dataset[:, :-1]
+    y = dataset[:, -1]
+    metrics_list = []
+
+    for train_indices, valid_indices, test_indices in folds:
+        train = dataset[train_indices]
+        valid = dataset[valid_indices]
+        x_test = x[test_indices, :]
+        y_test = y[test_indices]
+
+        model.fit(training_set=train)
+        model.prune(train, valid)
+        metrics = evaluate_metrics(x_test, y_test, model)
+        metrics_list.append(metrics)
 
     metrics_list = np.array(metrics_list)
-
     metrics_mean = get_metrics_mean(metrics_list)
 
     return metrics_mean
@@ -38,8 +57,8 @@ def evaluate(test_db, trained_tree):
     return np.nonzero(y_test == y_predict)[0].shape[0] / y_test.shape[0]
 
 
-def evaluate_metrics(x_test, y_test, trained_tree):
-    y_predict = trained_tree.predict(x_test)
+def evaluate_metrics(x_test, y_test, model):
+    y_predict = model.predict(x_test)
     return get_metrics(y_test, y_predict)
 
 

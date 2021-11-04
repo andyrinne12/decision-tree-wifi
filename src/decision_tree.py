@@ -57,7 +57,7 @@ class DecisionTree:
 
             #print(root.attribute, root.value, acc0, acc1)
 
-            if(acc1 <= acc0):
+            if(acc1 < acc0):
                 root.left = left
                 root.right = right
                 root.label = None
