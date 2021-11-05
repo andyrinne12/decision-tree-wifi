@@ -1,14 +1,19 @@
 import numpy as np
-import utils
+
 import extra
+import utils
 
 
 def eval_cross_validation(dataset, model, n_folds=10):
     folds = utils.train_test_k_fold(n_folds, dataset.shape[0])
+    total_folds = len(folds)
 
     x = dataset[:, :-1]
     y = dataset[:, -1]
-    metrics_list = []
+
+    class_labels = np.unique(y)
+    avg_depth = 0
+    confusion = np.zeros((len(class_labels), len(class_labels)))
 
     for train_indices, test_indices in folds:
         train = dataset[train_indices]
@@ -16,21 +21,25 @@ def eval_cross_validation(dataset, model, n_folds=10):
         y_test = y[test_indices]
 
         model.fit(training_set=train)
-        metrics = evaluate_metrics(x_test, y_test, model)
-        metrics_list.append(metrics)
+        confusion += evaluate_confusion(x_test, y_test, model, class_labels)
+        avg_depth += model.depth
 
-    metrics_list = np.array(metrics_list)
-    metrics_mean = get_metrics_mean(metrics_list)
+    confusion /= total_folds
+    avg_depth /= total_folds
 
-    return metrics_mean
+    return metrics_from_confusion(confusion, avg_depth)
 
 
 def eval_prune_nested_cross_validation(dataset, model, n_folds=10):
     folds = utils.train_val_test_k_fold(n_folds, dataset.shape[0])
+    total_folds = len(folds)
 
     x = dataset[:, :-1]
     y = dataset[:, -1]
-    metrics_list = []
+
+    class_labels = np.unique(y)
+    avg_depth = 0
+    confusion = np.zeros((len(class_labels), len(class_labels)))
 
     for train_indices, valid_indices, test_indices in folds:
         train = dataset[train_indices]
@@ -40,13 +49,13 @@ def eval_prune_nested_cross_validation(dataset, model, n_folds=10):
 
         model.fit(training_set=train)
         model.prune(train, valid)
-        metrics = evaluate_metrics(x_test, y_test, model)
-        metrics_list.append(metrics)
+        confusion += evaluate_confusion(x_test, y_test, model, class_labels)
+        avg_depth += model.depth
 
-    metrics_list = np.array(metrics_list)
-    metrics_mean = get_metrics_mean(metrics_list)
+    confusion /= total_folds
+    avg_depth /= total_folds
 
-    return metrics_mean
+    return metrics_from_confusion(confusion, avg_depth)
 
 
 def evaluate(test_db, trained_tree):
@@ -58,12 +67,31 @@ def evaluate(test_db, trained_tree):
 
 
 def evaluate_metrics(x_test, y_test, model):
+    confusion = evaluate_confusion(x_test, y_test, model)
+    return metrics_from_confusion(confusion, model.depth)
+
+
+def evaluate_confusion(x_test, y_test, model, class_labels=None):
     y_predict = model.predict(x_test)
-    return get_metrics(y_test, y_predict, model.depth)
+    return confusion_matrix(y_test, y_predict, class_labels)
 
 
-def get_metrics(y_gold, y_prediction, depth, class_labels=None):
-    confusion = confusion_matrix(y_gold, y_prediction, class_labels)
+def confusion_matrix(y_gold, y_prediction, class_labels=None):
+    if class_labels is None:
+        class_labels = np.unique(np.concatenate((y_gold, y_prediction)))
+
+    confusion = np.zeros((len(class_labels), len(class_labels)), dtype=np.int)
+
+    y_gold = y_gold.astype(int)
+    y_prediction = y_prediction.astype(int)
+
+    for i in range(len(y_gold)):
+        confusion[y_gold[i] - 1, y_prediction[i] - 1] += 1
+
+    return confusion
+
+
+def metrics_from_confusion(confusion, depth):
 
     # Compute the precision per class
 
@@ -108,61 +136,14 @@ def get_metrics(y_gold, y_prediction, depth, class_labels=None):
     r_macro = np.sum(r) / n
     f_macro = np.sum(f) / n
 
-    return EvalMetric(a, (p, p_macro), (r, r_macro), (f, f_macro), depth)
-
-
-def confusion_matrix(y_gold, y_prediction, class_labels=None):
-    if not class_labels:
-        class_labels = np.unique(np.concatenate((y_gold, y_prediction)))
-
-    confusion = np.zeros((len(class_labels), len(class_labels)), dtype=np.int)
-
-    y_gold = y_gold.astype(int)
-    y_prediction = y_prediction.astype(int)
-
-    for i in range(len(y_gold)):
-        confusion[y_gold[i] - 1, y_prediction[i] - 1] += 1
-
-    return confusion
-
-
-def get_metrics_mean(metrics_list):
-    m1 = metrics_list[0]
-
-    m1_acc = m1.accuracy
-    m1_depth = m1.depth
-    m1_prec, m1_macro_prec = m1.precision
-    m1_rec, m1_macro_rec = m1.recall
-    m1_f1, m1_macro_f1 = m1.f1
-
-    n = metrics_list.shape[0]
-
-    for i in range(1, metrics_list.shape[0]):
-
-        m = metrics_list[i]
-        m_acc = m.accuracy
-        m_depth = m.depth
-        m_prec, m_macro_prec = m.precision
-        m_rec, m_macro_rec = m.recall
-        m_f1, m_macro_f1 = m.f1
-
-        m1_depth += m_depth
-        m1_acc += m_acc
-        m1_macro_prec += m_macro_prec
-        m1_macro_rec += m_macro_rec
-        m1_macro_f1 += m_macro_f1
-
-        m1_prec = m1_prec + m_prec
-        m1_rec = m1_rec + m_rec
-        m1_f1 = m1_f1 + m_f1
-
-    return EvalMetric(m1_acc / n, (m1_prec / n, m1_macro_prec / n), (m1_rec / n, m1_macro_rec / n), (m1_f1 / n, m1_macro_f1 / n), m1_depth / n)
+    return EvalMetric(confusion, a, (p, p_macro), (r, r_macro), (f, f_macro), depth)
 
 
 class EvalMetric:
-    def __init__(self, accuracy, precision, recall, f1, depth):
+    def __init__(self, confusion, accuracy, precision, recall, f1, depth):
         self.accuracy = accuracy
         self.precision = precision
         self.recall = recall
         self.f1 = f1
         self.depth = depth
+        self.confusion = confusion
