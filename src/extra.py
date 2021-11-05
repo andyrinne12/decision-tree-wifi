@@ -2,6 +2,9 @@ import pandas as pd
 
 
 def print_metrics(metrics):
+    """
+    Prints in a table the Precision, the Recall, the F11, the Accuracy and the Average Depth
+    """
     a = metrics.accuracy
     p, p_macro = metrics.precision
     r, r_macro = metrics.recall
@@ -17,6 +20,9 @@ def print_metrics(metrics):
 
 
 def print_confusion(confusion):
+    """
+    Prints the confusion metrix
+    """
     df = pd.DataFrame(confusion)
     df = df.set_axis(["Room " + str(i + 1) +
                       " (P)" for i in range(confusion.shape[0])], axis=1, inplace=False)

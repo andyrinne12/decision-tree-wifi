@@ -1,19 +1,28 @@
 import numpy as np
 from numpy.random import default_rng
-# Compute the entropy of a dataset
 
 
 def entropy(dataset):
+    """
+    Calculates the entropy of the data
+    :param dataset: The dataset
+    :return: entropy of the data
+    """
     num = dataset.shape[0]
     labels, label_counts = np.unique(dataset, return_counts=True)
     probs = label_counts / num
     entropy = -1 * np.sum(probs * np.log2(probs))
     return entropy
 
-# Compute the weighted entropy of two datasets
 
 
 def remainder(left, right):
+    """
+    Calculates the remainder of the data
+    :param left: left dataset
+    :param right: right dataset
+    :return: remainder of left and right datasets
+    """
     left_n = left.shape[0]
     right_n = right.shape[0]
     total_n = left_n + right_n
@@ -23,15 +32,26 @@ def remainder(left, right):
 
     return rem
 
-# Compute the information gain for a dataset and a split
-
 
 def gain(total, left, right):
+    """
+    Calculates the information gain from splitting total into left and right
+    :param total: The data pre spilt
+    :param left: All data smaller than the split
+    :param right: All data larger than the split
+    :return: information gain from splitting on the the split point
+    """
     return entropy(total) - remainder(left, right)
 
 
 def train_test_k_fold(n_folds, n_instances, random_generator=default_rng()):
-    # split the dataset into k splits
+    """
+    Splits the dataset into k splits
+    :param n_folds: Number of folds to use
+    :param n_instances: Number of rows of the set
+    :param randon_generator: A random generator
+    :return: information gain from splitting on the the split point
+    """
     split_indices = k_fold_split(n_folds, n_instances, random_generator)
 
     folds = []
@@ -44,13 +64,16 @@ def train_test_k_fold(n_folds, n_instances, random_generator=default_rng()):
 
     return folds
 
-# Split the dataset into train, validation and test set in k ways using k folds
-# Returns indices of the entries in the initial dataset
 
 
 def train_val_test_k_fold(n_folds, n_instances, random_generator=default_rng()):
-
-    # split the dataset into k splits
+    """
+    Split the dataset into train, validation and test set in k ways using k folds
+    :param n_folds: Number of folds to use
+    :param n_instances: Number of rows of the set
+    :param randon_generator: A random generator
+    :return: indices of the entries in the initial dataset
+    """    
     split_indices = k_fold_split(n_folds, n_instances, random_generator)
 
     folds = []
@@ -70,6 +93,13 @@ def train_val_test_k_fold(n_folds, n_instances, random_generator=default_rng()):
 
 
 def k_fold_split(n_splits, n_instances, random_generator=default_rng()):
+    """
+    Splits the dataset in k parts
+    param n_folds: Number of folds to use
+    :param n_instances: Number of rows of the set
+    :param randon_generator: A random generator
+    :return split_indices: Set of split indices
+    """
     shuffled_indices = random_generator.permutation(n_instances)
     split_indices = np.array_split(shuffled_indices, n_splits)
     return split_indices

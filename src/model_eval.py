@@ -5,6 +5,12 @@ import utils
 
 
 def eval_cross_validation(dataset, model, n_folds=10):
+    """
+    Evaluates the tree using a 10-fold cross validation
+    :param dataset: The dataset on which the tree is valuated
+    :param model: The model
+    :param n_folds: Number of folds for cross validation
+    """
     folds = utils.train_test_k_fold(n_folds, dataset.shape[0])
     total_folds = len(folds)
 
@@ -31,6 +37,12 @@ def eval_cross_validation(dataset, model, n_folds=10):
 
 
 def eval_prune_nested_cross_validation(dataset, model, n_folds=10):
+    """
+    Evaluates the tree using a 10-fold cross validation AFTER PRUNING
+    :param dataset: The dataset on which the tree is valuated
+    :param model: The model
+    :param n_folds: Number of folds for cross validation
+    """
     folds = utils.train_val_test_k_fold(n_folds, dataset.shape[0])
     total_folds = len(folds)
 
@@ -59,6 +71,11 @@ def eval_prune_nested_cross_validation(dataset, model, n_folds=10):
 
 
 def evaluate(test_db, trained_tree):
+    """
+    Evaluates the accuracy of the tree
+    :param test_db: Test dataset
+    :param trained_tree: Trained tree
+    """
     x_test = test_db[:, :-1]
     y_test = test_db[:, -1]
     y_predict = trained_tree.predict(x_test)
@@ -72,11 +89,22 @@ def evaluate_metrics(x_test, y_test, model):
 
 
 def evaluate_confusion(x_test, y_test, model, class_labels=None):
+    """
+    Predicts and returns the confusion matrix
+    :param x_test: Set based on which the values are predicted
+    :param y_test: The actual values
+    """
     y_predict = model.predict(x_test)
     return confusion_matrix(y_test, y_predict, class_labels)
 
 
 def confusion_matrix(y_gold, y_prediction, class_labels=None):
+    """
+    Returns the confusion metrix
+    :param y_gold: The actual value
+    :param y_prediction: The predicted value
+    :return: The Confusion matrix
+    """
     if class_labels is None:
         class_labels = np.unique(np.concatenate((y_gold, y_prediction)))
 
@@ -93,7 +121,9 @@ def confusion_matrix(y_gold, y_prediction, class_labels=None):
 
 def metrics_from_confusion(confusion, depth):
 
-    # Compute the precision per class
+    """
+    Computes all the matrixes, the recalls, the precisions, the F1-meausres and the macros
+    """
 
     if np.sum(confusion) > 0:
         a = np.sum(np.diagonal(confusion)) / np.sum(confusion)

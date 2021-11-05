@@ -4,11 +4,20 @@ import model_eval
 
 
 class DecisionTree:
+    """
+    The Decision Tree is used to initialise the root of the decision tree
+    """
+
     def __init__(self):
         self.depth = 0
         self.root = None
 
     def fit(self, x_train=None, y_train=None, training_set=None):
+        """
+        Generates the tree structure based on input training data
+        :param x_train, y_train: Used when the data is separated because you can't do overloading in python
+        :param training_dataset: Data to be trained against
+        """
         if(x_train is None and y_train is None and training_set is None):
             raise Exception("No data passed to train the model")
         if(training_set is not None):
@@ -18,10 +27,18 @@ class DecisionTree:
                 np.hstack(x_train, y_train))
 
     def get_avg_depth(self):
+        """
+        Calculates the average depth of all trees
+        """
         total_depths, total_branches = self.__get_avg_depth(self.root)
         return total_depths / total_branches
 
     def predict(self, x_test):
+        """
+        Predicts outcome categories for input x_test using the generated tree structure
+        :param x_test: Array of data samples to be predicted
+        return: Array of categories predicted using the tree structure
+        """
         if(not self.root):
             raise Exception("Model has to be trained first")
 
@@ -32,11 +49,18 @@ class DecisionTree:
         return np.array(predicted)
 
     def prune(self, training_set, validation_set):
+        """
+        Performs a pruning function based on reducing the validation error
+        :param training_set: Array of trained data 
+        :param validation_set: Array the set on which the model is tested
+        """
         self.depth = self.__prune(self.root, training_set, validation_set)
 
-    # The text representation of the decision tree
 
     def __str__(self):
+        """
+        The text representation of the decision tree
+        """
         return self.__draw_tree(self.root)
 
     def __prune(self, root, training_set, validation_set):
@@ -77,6 +101,12 @@ class DecisionTree:
         return max(l_depth, r_depth) + 1
 
     def __decision_tree_learning(self, training_set, depth=0):
+        """
+        Creates the decision tree
+        :param training_set: the trained dataset
+        :param depth: depth of the tree
+        :return node, max(l_depth, r_depth): the decision tree and its depth
+        """
         labels = np.unique(training_set[:, -1])
 
         # There is only one unique label
@@ -92,9 +122,10 @@ class DecisionTree:
 
         return node, max(l_depth, r_depth)
 
-    # Recursive helper to draw the tree
-
     def __draw_tree(self, root, depth=1):
+        """
+        Recursive helper to draw the tree
+        """
         if(root.left == None and root.right == None):
             return "|  " * (depth - 1) + ">> " + "class " + str(root.label)
 
@@ -110,10 +141,14 @@ class DecisionTree:
 
             return l_nodes + r_nodes + 1, l_branches + r_branches
 
-# Predict the label using the given tree and data entry in a recursive manner
-
 
 def predict_entry(root, data):
+    """
+    Predict the label using the given tree and data entry in a recursive manner
+    :param root: Root of the decision tree
+    :param data: Data
+    :return: Label prediction
+    """
     if(root.left == None and root.right == None):
         return root.label
 
@@ -122,10 +157,13 @@ def predict_entry(root, data):
     else:
         return predict_entry(root.right, data)
 
-# Finds and returns the split with the highest information gain
-
 
 def find_split(dataset):
+    """
+    Finds and returns the split with the highest information gain
+    :param dataset: Dataset on which the split is performed
+    :return attr_max, val_max, left, right: the attribute and the value that results in the highest information gain
+    """
     attrs = dataset.shape[1] - 1
     h_max, attr_max, val_max = -1, None, None
 
@@ -149,10 +187,12 @@ def find_split(dataset):
     return (attr_max, val_max, left, right)
 
 
-# Node class used to build the decision tree
-# Leaves have the left and right attributes None and have a label set
 
 class Node:
+    """
+    Node class used to build the decision tree
+    Leaves have the left and right attributes None and have a label set
+    """
     def __init__(self, attribute, value, left, right, label=None):
         self.attribute = attribute
         self.value = value
