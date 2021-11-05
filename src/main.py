@@ -6,6 +6,18 @@ import sys
 
 
 def main(args):
+
+    model = DecisionTree()
+
+    model.fit(adwwawd)
+    # model.predict(awdwda)
+
+    accuracy = model_eval.evalluate(test, model)
+    confusion =
+
+    extra.print_confusion()
+    extra.print_metrics()
+
     print(args)
 
     clean_dataset = np.loadtxt("datasets/clean_dataset.txt")

@@ -59,7 +59,7 @@ def evaluate(test_db, trained_tree):
 
 def evaluate_metrics(x_test, y_test, model):
     y_predict = model.predict(x_test)
-    return get_metrics(y_test, y_predict)
+    return get_metrics(y_test, y_predict, model.depth)
 
 
 def get_metrics(y_gold, y_prediction, depth, class_labels=None):
