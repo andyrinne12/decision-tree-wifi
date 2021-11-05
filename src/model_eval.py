@@ -62,7 +62,7 @@ def evaluate_metrics(x_test, y_test, model):
     return get_metrics(y_test, y_predict)
 
 
-def get_metrics(y_gold, y_prediction, class_labels=None):
+def get_metrics(y_gold, y_prediction, depth, class_labels=None):
     confusion = confusion_matrix(y_gold, y_prediction, class_labels)
 
     # Compute the precision per class
@@ -108,7 +108,7 @@ def get_metrics(y_gold, y_prediction, class_labels=None):
     r_macro = np.sum(r) / n
     f_macro = np.sum(f) / n
 
-    return EvalMetric(a, (p, p_macro), (r, r_macro), (f, f_macro))
+    return EvalMetric(a, (p, p_macro), (r, r_macro), (f, f_macro), depth)
 
 
 def confusion_matrix(y_gold, y_prediction, class_labels=None):
@@ -130,6 +130,7 @@ def get_metrics_mean(metrics_list):
     m1 = metrics_list[0]
 
     m1_acc = m1.accuracy
+    m1_depth = m1.depth
     m1_prec, m1_macro_prec = m1.precision
     m1_rec, m1_macro_rec = m1.recall
     m1_f1, m1_macro_f1 = m1.f1
@@ -140,10 +141,12 @@ def get_metrics_mean(metrics_list):
 
         m = metrics_list[i]
         m_acc = m.accuracy
+        m_depth = m.depth
         m_prec, m_macro_prec = m.precision
         m_rec, m_macro_rec = m.recall
         m_f1, m_macro_f1 = m.f1
 
+        m1_depth += m_depth
         m1_acc += m_acc
         m1_macro_prec += m_macro_prec
         m1_macro_rec += m_macro_rec
@@ -153,12 +156,13 @@ def get_metrics_mean(metrics_list):
         m1_rec = m1_rec + m_rec
         m1_f1 = m1_f1 + m_f1
 
-    return EvalMetric(m1_acc / n, (m1_prec / n, m1_macro_prec / n), (m1_rec / n, m1_macro_rec / n), (m1_f1 / n, m1_macro_f1 / n))
+    return EvalMetric(m1_acc / n, (m1_prec / n, m1_macro_prec / n), (m1_rec / n, m1_macro_rec / n), (m1_f1 / n, m1_macro_f1 / n), m1_depth / n)
 
 
 class EvalMetric:
-    def __init__(self, accuracy, precision, recall, f1):
+    def __init__(self, accuracy, precision, recall, f1, depth):
         self.accuracy = accuracy
         self.precision = precision
         self.recall = recall
         self.f1 = f1
+        self.depth = depth

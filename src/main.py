@@ -2,8 +2,12 @@ from decision_tree import DecisionTree
 import model_eval
 import numpy as np
 import extra
+import sys
 
-if __name__ == '__main__':
+
+def main(args):
+    print(args)
+
     clean_dataset = np.loadtxt("datasets/clean_dataset.txt")
     noisy_dataset = np.loadtxt("datasets/noisy_dataset.txt")
 
@@ -13,3 +17,7 @@ if __name__ == '__main__':
         clean_dataset, model, 10)
 
     print(extra.print_metrics(cv_clean_metrics))
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

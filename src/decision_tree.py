@@ -17,6 +17,10 @@ class DecisionTree:
             self.root, self.depth = self.__decision_tree_learning(
                 np.hstack(x_train, y_train))
 
+    def get_avg_depth(self):
+        total_depths, total_branches = self.__get_avg_depth(self.root)
+        return total_depths / total_branches
+
     def predict(self, x_test):
         if(not self.root):
             raise Exception("Model has to be trained first")
@@ -29,6 +33,11 @@ class DecisionTree:
 
     def prune(self, training_set, validation_set):
         self.depth = self.__prune(self.root, training_set, validation_set)
+
+    # The text representation of the decision tree
+
+    def __str__(self):
+        return self.__draw_tree(self.root)
 
     def __prune(self, root, training_set, validation_set):
         if(root is None):
@@ -91,10 +100,15 @@ class DecisionTree:
 
         return ("|  ") * (depth - 1) + ("*  ") + "feature " + str(root.attribute) + " <= " + str(root.value) + '\n' + self.__draw_tree(root.left, depth + 1) + '\n' + ("|  ") * (depth - 1) + ("*  ") + "feature " + str(root.attribute) + " > " + str(root.value) + '\n' + self.__draw_tree(root.right, depth + 1)
 
-    # The text representation of the decision tree
+    def __get_avg_depth(self, root):
+        if(root.left is None and root.right is None):
+            return 1, 1
 
-    def __str__(self):
-        return self.__draw_tree(self.root)
+        else:
+            l_nodes, l_branches = self.__get_avg_depth(root.left)
+            r_nodes, r_branches = self.__get_avg_depth(root.right)
+
+            return l_nodes + r_nodes + 1, l_branches + r_branches
 
 # Predict the label using the given tree and data entry in a recursive manner
 
